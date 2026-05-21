@@ -1,0 +1,12 @@
+server:
+  port: 8083
+spring:
+  ai:
+    dashscope:
+      api-key: sk-5b0e0b5a161a465a81bb6c80b7eccd96
+    alibaba:
+      a2a:
+        nacos:
+          server-addr: 192.168.2.10:8848
+          discovery:
+            enabled: true

@@ -4,7 +4,7 @@ server:
 spring:
   ai:
     dashscope:
-      api-key: sk-5b0e0b5a161a465a81bb6c80b7eccd96
+      api-key: ${DASHSCOPE_API_KEY:''}
     alibaba:
       a2a:
         nacos:

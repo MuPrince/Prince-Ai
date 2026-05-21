@@ -21,3 +21,5 @@ spring:
         protocol: streamable
         annotation-scanner:
           enabled: true
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:''}

@@ -244,6 +244,11 @@ conda activate env_name
 conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
 conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
 conda config --set show_channel_urls yes 
+
+conda create --prefix D:\Program Files\pythonenv -n prince_ai python=3.10
+conda config --add envs_dirs “D:\Program Files\pythonenv\prince_ai”
+
+
 ```
 ### LangChain库
 #### Models（模型）

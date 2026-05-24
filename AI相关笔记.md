@@ -62,13 +62,35 @@
 
 ### ReAct模式 
 
+> 相关论文 
 >  https://arxiv.org/pdf/2210.03629
->
 >  https://react-lm.github.io/
 
 #### 原理
 
+ReAct模式是一种基于大模型的智能体模式，它将大模型的推理能力与开发者的规则和逻辑相结合，形成一个智能体系统。
+在没有ReAct之前，Reasoning和Action是分割开的。ReAct针对给出的问题，先进性思考，再根据思考的结果行动，如果不满足要求，再进行思考、行动，直到得到满意的结果为止。
+采用few-shot in-context learning来生成解决问题的action和thought序列。
+再推理占主导的应用中，交替生成thought和action，这样完整的行为轨迹是多个thought-action-observation循环。
+相反，Action占主导的应用中，thought只会在行为轨迹中最相关的位置稀疏出现
+
 #### 实现
+> 一个ReAct流程里，关键是三个概念
+* Thought
+  > 思考过程，大模型根据当前状态和问题，生成一个思考结果。
+  > 可以根据LLM的思考，来衡量要采取的行为是否合理。
+  > 这是一个可以用来判断本次决策是否合理的关键依据。thought的存在可以让LLM的决策变得更加有可解释性和可信度。
+* Action
+  > Action是指LLM判断本次需要执行的具体行为
+  > Action一般由两部分组成：行为和对象。用编程的说法就是API名称和对应的入参。
+  > LLM最大的优势是，可以根据thought的判断，选择需要使用的API并生成对应的入参。从而保证了ReAct框架在执行层面的可行性
+* Observation
+  > LLM框架对于外界输入获取。将外界的反馈信息同步给LLM。协助LLM进一步的做分析和决策。
+
+一个完整的ReAct的行为，包含几个流程：
+  1. 输入目标：任务的起点。可以是用户的手动输入，也可以是依靠触发器（比如系统故障报警、定时任务）
+  2. LOOP：LLM开始分析问题需要的步骤（thought），按步骤执行Action，根据观察到的信息（observation），循环执行这个过程，直到判断任务目标达成。
+  3. finish:任务最终执行成功。返回最终结果。
 
 Plan and Solve
 

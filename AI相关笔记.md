@@ -71,10 +71,12 @@
 ReAct模式是一种基于大模型的智能体模式，它将大模型的推理能力与开发者的规则和逻辑相结合，形成一个智能体系统。
 在没有ReAct之前，Reasoning和Action是分割开的。ReAct针对给出的问题，先进性思考，再根据思考的结果行动，如果不满足要求，再进行思考、行动，直到得到满意的结果为止。
 采用few-shot in-context learning来生成解决问题的action和thought序列。
+每个in-context样例是由thought、action、observation组成的。
 再推理占主导的应用中，交替生成thought和action，这样完整的行为轨迹是多个thought-action-observation循环。
 相反，Action占主导的应用中，thought只会在行为轨迹中最相关的位置稀疏出现
 
 #### 实现
+![ReAct](./resources/ReAct.png)
 > 一个ReAct流程里，关键是三个概念
 * Thought
   > 思考过程，大模型根据当前状态和问题，生成一个思考结果。
@@ -92,7 +94,56 @@ ReAct模式是一种基于大模型的智能体模式，它将大模型的推理
   2. LOOP：LLM开始分析问题需要的步骤（thought），按步骤执行Action，根据观察到的信息（observation），循环执行这个过程，直到判断任务目标达成。
   3. finish:任务最终执行成功。返回最终结果。
 
-Plan and Solve
+### Plan and Solve模式
+> 相关论文。
+>  https://arxiv.org/pdf/2305.04091
+>  https://github.com/AGI-Edgerunners/Plan-and-Solve-Prompting
+>  为了提升LLM的多步推理（multi-step reasoning）能力，讨论COT问题中Zero-Shot时对推理质量的提升。
+>  论文首先分析了在Zero-Shot COT时的错误分布
+>  其中三种错误：计算错误、步骤错误和语义理解错误占比高，其余的错误可能是因为LLM本身能力（capability）不足导致的。
+>  * 计算错误 7%
+>  * 步骤错误 12%
+>  * 语义理解错误 27%
+>
+>  为了解决计算错误，提升LLM生成的推理步骤（reasoning steps）质量，又对PS promoting进行扩展，提出PS+ prompting。
+    为了解决多步推理的步骤缺失问题，提出了Plan-and-Solve prompting方法，简称PS。它由两部分组成，首先设计计划，计划的目标是将整个任务划分为多个更小的子任务，然后根据计划执行子任务
+#### 实现原理
+这种设计模式是先有计划在执行
+如果ReAct更适合完成“厨房拿酱油”的任务，那么Plan-and-Solve更适合完成“西红柿炒鸡蛋”的任务
+##### 规划器
+负责让LLM生成一个多步计划来完成一个大任务
+代码中有Planner和Replanner，planner负责第一次生成计划，replanner是指在完成单个任务后，根据当前任务的完成情况进行replan，所以Replanner提示词中除了Zero-Shot，还会包含：目标，原有计划，已完成步骤的情况
+##### 执行器
+接受用户查询和规划中的步骤，并调用一个或多个工具来完成该任务
+
+### Reason without Observation模式
+> 相关论文。
+>  https://arxiv.org/pdf/2305.18323
+>  https://github.com/billxbf/ReWOO/tree/main
+#### 原理
+核心思想是将推理（Reasoning）过程与外部观察（Observation）分离。以此来提高LLM的效率和性能
+REWOO模式通过以下几个步骤来优化这一过程：
+1. **Planner（规划器）**
+  首先，规划器接收到用户输入的任务，并将其分解为一系列的计划（Plans）。
+  每个计划都详细说明了需要使用的外部工具和如何使用这些工具来获取证据或执行特定的动作
+  负责生成一个相互依赖的“链式计划”，定义每一步所依赖的上一步的输出
+2. **Worker（执行器）**
+  执行器根据规划器提供的计划，调用相应的外部工具来执行任务，并获取必要的信息或证据
+  循环遍历每个任务，并将任务输出分配给相应的变量，当调用后续调用时，它还会用变量的结果替换变量
+3. **Solver（合并器）**
+  合并器将所有计划的执行结果整合起来，形成对原始任务的最终解决方案
+
+这种模块化的设计显著减少了Token消耗和执行时间，因为它允许一次性生成完整的工具链，而不是在每次迭代中重复调用LLM。此外，由于规划数据不依赖于工具输出，因此可以在不实际调用工具的情况下对LLM进行微调，进一步简化微调过程
+
+
+### LLMCompiler模式
+
+### Basic Reflection模式
+
+### Reflexion模式
+
+### Language Agent Tree Search模式
+
 
 ## Spring AI 
 

@@ -1,6 +1,6 @@
-# LangChain 项目
+# LangChain 项目（阿里云百炼）
 
-这是一个基础的 LangChain 项目。
+基于阿里云百炼平台的 LangChain 项目。
 
 ## 安装依赖
 
@@ -16,7 +16,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-然后编辑 `.env` 文件，填入你的 OpenAI API Key。
+然后编辑 `.env` 文件，填入你的 `DASHSCOPE_API_KEY`。
 
 ## 运行项目
 
@@ -24,3 +24,9 @@ cp .env.example .env
 python main.py
 ```
 
+## 可用模型
+
+- `qwen-turbo`（默认）
+- `qwen-plus`
+- `qwen-max`
+- 其他阿里云百炼支持的模型

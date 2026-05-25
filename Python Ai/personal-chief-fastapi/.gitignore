@@ -23,4 +23,6 @@ wheels/
 env/
 venv/
 ENV/
-*.env
+.idea/
+.vscode/
+*.log

@@ -12,6 +12,8 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Query
 from fastapi.responses import JSONResponse
 import oss2
 
+from app.models.schemas import success_response, error_response
+
 load_dotenv()
 
 router = APIRouter(prefix="/oss", tags=["OSS"])
@@ -33,7 +35,7 @@ def get_file_extension(filename: str) -> str:
 
 def get_oss_client():
     if not OSS_ACCESS_KEY_ID or not OSS_ACCESS_KEY_SECRET or not OSS_BUCKET_NAME:
-        raise HTTPException(status_code=500, detail="OSS 配置未完成")
+        return None
     auth = oss2.Auth(OSS_ACCESS_KEY_ID, OSS_ACCESS_KEY_SECRET)
     return oss2.Bucket(auth, OSS_ENDPOINT, OSS_BUCKET_NAME)
 
@@ -43,26 +45,26 @@ async def get_upload_signature(
     expire: int = Query(default=3600, description="过期时间（秒）")
 ):
     if not OSS_ACCESS_KEY_ID or not OSS_ACCESS_KEY_SECRET or not OSS_BUCKET_NAME:
-        raise HTTPException(status_code=500, detail="OSS 配置未完成")
-    
+        return JSONResponse(content=error_response(message="OSS 配置未完成", code=500))
+
     now = int(time.time())
     expire_time = now + expire
-    
+
     expiration = datetime.utcfromtimestamp(expire_time).strftime('%Y-%m-%dT%H:%M:%S.000Z')
-    
+
     conditions = [
         ["content-length-range", 0, 10 * 1024 * 1024],
         ["starts-with", "$key", dir]
     ]
-    
+
     policy_dict = {
         "expiration": expiration,
         "conditions": conditions
     }
-    
+
     policy = json.dumps(policy_dict).strip()
     policy_base64 = base64.b64encode(policy.encode("utf-8")).decode("utf-8")
-    
+
     signature = base64.b64encode(
         hmac.new(
             OSS_ACCESS_KEY_SECRET.encode("utf-8"),
@@ -70,18 +72,20 @@ async def get_upload_signature(
             hashlib.sha1
         ).digest()
     ).decode("utf-8")
-    
+
     host = f"https://{OSS_BUCKET_NAME}.{OSS_ENDPOINT}"
-    
-    return JSONResponse(content={
-        "success": True,
-        "access_key_id": OSS_ACCESS_KEY_ID,
-        "policy": policy_base64,
-        "signature": signature,
-        "host": host,
-        "dir": dir,
-        "expire": expire_time
-    })
+
+    return JSONResponse(content=success_response(
+        data={
+            "access_key_id": OSS_ACCESS_KEY_ID,
+            "policy": policy_base64,
+            "signature": signature,
+            "host": host,
+            "dir": dir,
+            "expire": expire_time
+        },
+        message="获取签名成功"
+    ))
 
 @router.get("/presign", summary="获取预签名上传URL")
 async def get_presign_url(filename: str):
@@ -94,92 +98,108 @@ async def get_presign_url(filename: str):
     }
     ext = filename.split(".")[-1].lower() if "." in filename else "jpg"
     content_type = content_type_map.get(ext, "application/octet-stream")
-    
+
+    bucket = get_oss_client()
+    if not bucket:
+        return JSONResponse(content=error_response(message="OSS 配置未完成", code=500))
+
     try:
-        bucket = get_oss_client()
         url = bucket.sign_url('PUT', filename, OSS_EXPIRE_SECONDS, headers={'Content-Type': content_type})
-        
-        return {
-            "success": True,
-            "uploadUrl": url,
-            "contentType": content_type,
-            "accessUrl": f"https://{OSS_BUCKET_NAME}.{OSS_ENDPOINT}/{filename}"
-        }
+
+        return JSONResponse(content=success_response(
+            data={
+                "uploadUrl": url,
+                "contentType": content_type,
+                "accessUrl": f"https://{OSS_BUCKET_NAME}.{OSS_ENDPOINT}/{filename}"
+            },
+            message="获取预签名URL成功"
+        ))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"生成预签名URL失败: {str(e)}")
+        return JSONResponse(content=error_response(message=f"生成预签名URL失败: {str(e)}", code=500))
 
 @router.post("/upload/image", summary="上传图片到阿里云 OSS")
 async def upload_image(file: UploadFile = File(...)):
     if not allowed_file(file.filename):
-        raise HTTPException(status_code=400, detail=f"不支持的文件类型，仅支持: {', '.join(ALLOWED_EXTENSIONS)}")
-    
+        return JSONResponse(content=error_response(
+            message=f"不支持的文件类型，仅支持: {', '.join(ALLOWED_EXTENSIONS)}",
+            code=400
+        ))
+
     file_content = await file.read()
     if len(file_content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="文件大小超过限制（最大10MB）")
-    
+        return JSONResponse(content=error_response(message="文件大小超过限制（最大10MB）", code=400))
+
+    bucket = get_oss_client()
+    if not bucket:
+        return JSONResponse(content=error_response(message="OSS 配置未完成", code=500))
+
     try:
-        bucket = get_oss_client()
-        
         ext = get_file_extension(file.filename)
         date_str = datetime.now().strftime("%Y/%m/%d")
         file_name = f"{date_str}/{uuid4().hex}.{ext}"
-        
+
         bucket.put_object(file_name, file_content)
-        
+
         url = f"https://{OSS_BUCKET_NAME}.{OSS_ENDPOINT}/{file_name}"
-        
-        return JSONResponse(content={
-            "success": True,
-            "message": "上传成功",
-            "url": url,
-            "filename": file_name
-        })
-    
+
+        return JSONResponse(content=success_response(
+            data={
+                "url": url,
+                "filename": file_name
+            },
+            message="上传成功"
+        ))
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"上传失败: {str(e)}")
+        return JSONResponse(content=error_response(message=f"上传失败: {str(e)}", code=500))
 
 @router.delete("/delete", summary="删除 OSS 文件")
 async def delete_file(file_path: str):
+    bucket = get_oss_client()
+    if not bucket:
+        return JSONResponse(content=error_response(message="OSS 配置未完成", code=500))
+
     try:
-        bucket = get_oss_client()
         bucket.delete_object(file_path)
-        
-        return JSONResponse(content={
-            "success": True,
-            "message": "删除成功"
-        })
-    
+
+        return JSONResponse(content=success_response(message="删除成功"))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"删除失败: {str(e)}")
+        return JSONResponse(content=error_response(message=f"删除失败: {str(e)}", code=500))
 
 @router.get("/url", summary="获取 OSS 文件访问 URL")
 async def get_file_url(file_path: str):
     if not OSS_ACCESS_KEY_ID or not OSS_ACCESS_KEY_SECRET or not OSS_BUCKET_NAME:
-        raise HTTPException(status_code=500, detail="OSS 配置未完成")
-    
+        return JSONResponse(content=error_response(message="OSS 配置未完成", code=500))
+
     url = f"https://{OSS_BUCKET_NAME}.{OSS_ENDPOINT}/{file_path}"
-    
-    return JSONResponse(content={
-        "success": True,
-        "url": url,
-        "file_path": file_path
-    })
+
+    return JSONResponse(content=success_response(
+        data={
+            "url": url,
+            "file_path": file_path
+        },
+        message="获取URL成功"
+    ))
 
 @router.get("/info", summary="获取 OSS 文件信息")
 async def get_file_info(file_path: str):
+    bucket = get_oss_client()
+    if not bucket:
+        return JSONResponse(content=error_response(message="OSS 配置未完成", code=500))
+
     try:
-        bucket = get_oss_client()
         file_info = bucket.get_object_meta(file_path)
-        
-        return JSONResponse(content={
-            "success": True,
-            "file_path": file_path,
-            "content_length": file_info.content_length,
-            "last_modified": file_info.last_modified,
-            "content_type": file_info.content_type
-        })
-    
+
+        return JSONResponse(content=success_response(
+            data={
+                "file_path": file_path,
+                "content_length": file_info.content_length,
+                "last_modified": file_info.last_modified,
+                "content_type": file_info.content_type
+            },
+            message="获取文件信息成功"
+        ))
     except oss2.exceptions.NoSuchKey:
-        raise HTTPException(status_code=404, detail="文件不存在")
+        return JSONResponse(content=error_response(message="文件不存在", code=404))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取文件信息失败: {str(e)}")
+        return JSONResponse(content=error_response(message=f"获取文件信息失败: {str(e)}", code=500))

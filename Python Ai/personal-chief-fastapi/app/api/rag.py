@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List
 
+
 from app.models.schemas import success_response, error_response
 from app.common.embedding import compute_embeddings
 from app.common.milvus import insert_chunks, create_collection, get_collection
@@ -123,3 +124,20 @@ async def list_knowledge_files():
         data=[{"name": "假文件1", "size": 10}, {"name": "假文件2", "size": 15}, {"name": "假文件3", "size": 20}],
         message="获取成功"
     ))
+
+from app.agents.rag_agent import stream_response
+from fastapi.responses import StreamingResponse
+
+@router.get("/chat", summary="调用 RAG 模型")
+def agent(query: str):
+
+    return StreamingResponse(
+        stream_response(query),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # 禁用代理缓冲
+            "Access-Control-Allow-Origin": "*",
+        }
+    )

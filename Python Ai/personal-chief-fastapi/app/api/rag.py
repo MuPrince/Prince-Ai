@@ -125,19 +125,20 @@ async def list_knowledge_files():
         message="获取成功"
     ))
 
-from app.agents.rag_agent import stream_response
+from app.agents.rag_agent import stream_response, agent as rag_agent_agent
 from fastapi.responses import StreamingResponse
 
 @router.get("/chat", summary="调用 RAG 模型")
 def agent(query: str):
 
-    return StreamingResponse(
-        stream_response(query),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",  # 禁用代理缓冲
-            "Access-Control-Allow-Origin": "*",
-        }
-    )
+    # return StreamingResponse(
+    #     stream_response(query),
+    #     media_type="text/event-stream",
+    #     headers={
+    #         "Cache-Control": "no-cache",
+    #         "Connection": "keep-alive",
+    #         "X-Accel-Buffering": "no",  # 禁用代理缓冲
+    #         "Access-Control-Allow-Origin": "*",
+    #     }
+    # )
+    return JSONResponse(content=rag_agent_agent(query))

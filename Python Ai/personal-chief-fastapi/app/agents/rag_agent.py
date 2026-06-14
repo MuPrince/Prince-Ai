@@ -18,8 +18,8 @@ def create_llm():
 llm = create_llm()
 
 system_prompt = """
-你是一名运维工程师。
-你需要回答用户的问题。
+你是一名图形设计师
+你需要根据用户的描述生成对应的图片。
 用户问题：
 {query}
 """
@@ -29,27 +29,35 @@ def agent(query: str):
     print(query)
     response = llm.invoke(system_prompt.format(query=query))
     return response.content
+    # return system_prompt.format(query=query)
+
+
 
 async def stream_response(query: str) -> AsyncGenerator[str, None]:
     """流式生成响应"""
     try:
         # 方式1：如果 llm 支持流式调用
         # 检查你的 llm 对象是否支持 stream 参数
-        if hasattr(llm, 'stream') or (hasattr(llm, 'invoke') and 'stream' in llm.__class__.__name__.lower()):
-            # 使用流式 API
-            async for chunk in llm.astream(system_prompt.format(query=query)):
-                # 假设 chunk 有 content 属性
-                content = chunk.content if hasattr(chunk, 'content') else str(chunk)
-                yield f"data: {json.dumps({'content': content, 'status': 'streaming'}, ensure_ascii=False)}\n\n"
-                await asyncio.sleep(0.01)  # 可选：控制输出速度
-        else:
-            # 方式2：如果不支持流式，先获取完整响应再模拟流式输出
-            response = agent(query)
-            # 逐字符输出，模拟流式效果
-            for char in response:
-                yield f"data: {json.dumps({'content': char, 'status': 'streaming'}, ensure_ascii=False)}\n\n"
-                await asyncio.sleep(0.02)  # 模拟打字效果
-        
+        # if hasattr(llm, 'stream') or (hasattr(llm, 'invoke') and 'stream' in llm.__class__.__name__.lower()):
+        #     # 使用流式 API
+        #     async for chunk in llm.astream(system_prompt.format(query=query)):
+        #         # 假设 chunk 有 content 属性
+        #         content = chunk.content if hasattr(chunk, 'content') else str(chunk)
+        #         yield f"data: {json.dumps({'content': content, 'status': 'streaming'}, ensure_ascii=False)}\n\n"
+        #         await asyncio.sleep(0.01)  # 可选：控制输出速度
+        # else:
+        #     # 方式2：如果不支持流式，先获取完整响应再模拟流式输出
+        #     response = agent(query)
+        #     # 逐字符输出，模拟流式效果
+        #     for char in response:
+        #         yield f"data: {json.dumps({'content': char, 'status': 'streaming'}, ensure_ascii=False)}\n\n"
+        #         await asyncio.sleep(0.02)  # 模拟打字效果
+        # 方式2：如果不支持流式，先获取完整响应再模拟流式输出
+        response = agent(query)
+        # 逐字符输出，模拟流式效果
+        for char in response:
+            yield f"data: {json.dumps({'content': char, 'status': 'streaming'}, ensure_ascii=False)}\n\n"
+            await asyncio.sleep(0.02)  # 模拟打字效果
         # 发送完成信号
         yield f"data: {json.dumps({'status': 'completed'}, ensure_ascii=False)}\n\n"
         yield "data: [DONE]\n\n"

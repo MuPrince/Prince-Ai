@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: springai
+
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+#      model: qwen-3.5
+#      embedding:
+#        options:
+#          model: text-embedding-v2
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY}
+#
+#
+    openai:
+      api-key: ${OPENAI_API_KEY}

@@ -1,4 +1,4 @@
-# project/SpringAi-project 说明
+# project/Java/springai-project 说明
 
 ## model工程
 由于原本模型依赖引入之后需要配置对应的API_KEY，否则会启动报错。

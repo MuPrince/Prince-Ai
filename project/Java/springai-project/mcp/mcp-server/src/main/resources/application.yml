@@ -1,0 +1,33 @@
+server:
+  port: 21000
+
+spring:
+  main:
+    banner-mode: off
+  application:
+    name: prince-mcp-server-nacos
+  ai:
+    mcp:
+      server:
+        name: prince-mcp-server
+        version: 1.0.0
+        type: ASYNC  # Recommended for reactive applications
+        instructions: "This reactive server provides time information tools and resources"
+        protocol: STREAMABLE
+        request-timeout: 20s
+        streamable-http:
+          mcp-endpoint: /mcp
+          keep-alive-interval: 30s
+          disallow-delete: false
+
+    alibaba:
+      mcp:
+        nacos:
+          namespace: public
+          server-addr: 192.168.2.10:8848
+          username: nacos
+          password: nacos
+          register:
+            enabled: true
+            service-group: mcp-server       ## 指定分组名称
+            service-name: prince-mcp-server ## 指定服务名称

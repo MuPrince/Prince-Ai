@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: prince-mcp-distributed-client
+  main:
+    web-application-type: none
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+    mcp:
+      client:
+        enabled: true
+        name: prince-mcp-client
+        version: 1.0.0
+        request-timeout: 30s
+        type: ASYNC  # or ASYNC for reactive applications
+
+
+    alibaba:
+      mcp:
+        nacos:
+          client:
+            enabled: true
+            streamable:
+              connections:
+                server1:
+                  service-name: prince-mcp-server
+                  version: 1.0.0
+            configs:
+              server1:
+                namespace: public
+                server-addr: 192.168.2.10:8848
+                username: nacos
+                password: nacos

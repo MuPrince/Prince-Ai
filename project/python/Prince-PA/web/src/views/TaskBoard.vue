@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ChatPanel from '@/components/ChatPanel.vue'
+import ProfilePanel from '@/components/ProfilePanel.vue'
 import TaskDetailDrawer from '@/components/TaskDetailDrawer.vue'
 import TaskCard from '@/components/TaskCard.vue'
 import TaskFilter from '@/components/TaskFilter.vue'
@@ -43,6 +44,7 @@ function openNote(id: number) {
       <el-empty v-if="store.tasks.length === 0" description="暂无任务" />
     </main>
     <ChatPanel class="right-chat" />
+    <ProfilePanel />
     <TaskFormDialog v-model="showForm" />
     <TaskDetailDrawer
       :task="selectedTask"

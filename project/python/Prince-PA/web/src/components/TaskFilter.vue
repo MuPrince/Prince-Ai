@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useTaskStore } from '@/stores/task'
+import { useProfileStore } from '@/stores/profile'
 
 const store = useTaskStore()
+const profileStore = useProfileStore()
 </script>
 
 <template>
@@ -26,6 +28,9 @@ const store = useTaskStore()
       <el-radio-button value="in_progress">学习中</el-radio-button>
       <el-radio-button value="completed">已完成</el-radio-button>
     </el-radio-group>
+    <el-button class="profile-button" text @click="profileStore.open">
+      用户画像/偏好
+    </el-button>
   </div>
 </template>
 

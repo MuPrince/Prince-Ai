@@ -22,10 +22,12 @@
 | 用途 | 命令 |
 | --- | --- |
 | 创建虚拟环境 | `python -m venv .venv` |
-| 安装依赖 | `pip install -r requirements.txt` |
-| 本地启动服务 | `uvicorn app.main:app --reload` |
-| 运行测试 | `pytest` |
-| 代码检查 | `ruff check .` 或 `flake8 .` |
+| 安装后端依赖 | `.\.venv\Scripts\python.exe -m pip install -r requirements.txt` |
+| 后端启动 | `.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8002` |
+| 后端测试 | `.\.venv\Scripts\python.exe -m pytest` |
+| 前端依赖 | `cd web; npm install` |
+| 前端测试/构建 | `cd web; npm run test; npm run build` |
+| 代码检查 | `ruff check .` |
 
 
 ## 编码约定
@@ -45,9 +47,13 @@
 ```text
 project/python/Prince-PA/
 ├── AGENTS.md          # 本项目智能体协作说明
+├── PRD.md / README.md # 产品与运行说明
 ├── requirements.txt   # Python 依赖
-├── app/               # 应用代码
-├── tests/             # 测试代码
+├── app/               # FastAPI 后端
+├── agents/            # LangChain Agent、工具、记忆
+├── web/               # Vue 3 前端
+├── tests/             # 后端测试
+├── data/              # 运行时笔记与 SQLite（不提交）
 └── .env               # 本地环境变量（不提交）
 ```
 

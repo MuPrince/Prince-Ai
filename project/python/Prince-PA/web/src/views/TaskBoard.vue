@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import ChatPanel from '@/components/ChatPanel.vue'
 import TaskDetailDrawer from '@/components/TaskDetailDrawer.vue'
 import TaskCard from '@/components/TaskCard.vue'
 import TaskFilter from '@/components/TaskFilter.vue'
@@ -41,6 +42,7 @@ function openNote(id: number) {
       </div>
       <el-empty v-if="store.tasks.length === 0" description="暂无任务" />
     </main>
+    <ChatPanel class="right-chat" />
     <TaskFormDialog v-model="showForm" />
     <TaskDetailDrawer
       :task="selectedTask"
@@ -53,7 +55,7 @@ function openNote(id: number) {
 <style scoped>
 .board-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 240px 1fr 360px;
   height: 100vh;
 }
 .left-filter {

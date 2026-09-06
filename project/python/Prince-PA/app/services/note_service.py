@@ -60,6 +60,11 @@ def _row_for(session: Session, task_id: int, kind: NoteKind, rel_path: str) -> N
     return row
 
 
+def _sync_relationship(task: Task, row: NoteFile) -> None:
+    if "note_files" in task.__dict__ and row not in task.note_files:
+        task.note_files.append(row)
+
+
 def init_note_file(session: Session, task_id: int) -> NoteFile:
     task = _task_with_language(session, task_id)
     rel = note_rel_path(task)
@@ -67,6 +72,7 @@ def init_note_file(session: Session, task_id: int) -> NoteFile:
     if not full.exists():
         _write_file(rel, "")
     row = _row_for(session, task_id, NoteKind.note, rel)
+    _sync_relationship(task, row)
     session.commit()
     return row
 
@@ -82,6 +88,7 @@ def write_note(session: Session, task_id: int, content: str) -> NoteFile:
     rel = note_rel_path(task)
     _write_file(rel, content)
     row = _row_for(session, task_id, NoteKind.note, rel)
+    _sync_relationship(task, row)
     session.commit()
     return row
 
@@ -97,6 +104,7 @@ def write_summary(session: Session, task_id: int, content: str) -> NoteFile:
     rel = summary_rel_path(task)
     _write_file(rel, content)
     row = _row_for(session, task_id, NoteKind.summary, rel)
+    _sync_relationship(task, row)
     session.commit()
     return row
 

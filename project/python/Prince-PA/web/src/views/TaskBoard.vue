@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import TaskDetailDrawer from '@/components/TaskDetailDrawer.vue'
 import TaskCard from '@/components/TaskCard.vue'
 import TaskFilter from '@/components/TaskFilter.vue'
 import TaskFormDialog from '@/components/TaskFormDialog.vue'
 import { useTaskStore } from '@/stores/task'
+import type { Task } from '@/types'
 
 const store = useTaskStore()
+const router = useRouter()
 const showForm = ref(false)
+const selectedTask = ref<Task | null>(null)
 onMounted(() => store.init())
+
+function openNote(id: number) {
+  router.push(`/tasks/${id}/note`)
+}
 </script>
 
 <template>
@@ -27,11 +36,17 @@ onMounted(() => store.init())
           :task="task"
           @start="store.startTask(task.id)"
           @complete="store.completeTask(task.id)"
+          @detail="selectedTask = $event"
         />
       </div>
       <el-empty v-if="store.tasks.length === 0" description="暂无任务" />
     </main>
     <TaskFormDialog v-model="showForm" />
+    <TaskDetailDrawer
+      :task="selectedTask"
+      @close="selectedTask = null"
+      @open-note="openNote"
+    />
   </div>
 </template>
 

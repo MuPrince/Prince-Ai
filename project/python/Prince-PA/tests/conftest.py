@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.api.deps import get_session_factory
 from app.main import app
 from app.models.entities import Base
 
@@ -43,7 +44,11 @@ def client(tmp_path):
         finally:
             db.close()
 
+    def override_session_factory():
+        return session_factory
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_session_factory] = override_session_factory
     try:
         yield TestClient(app)
     finally:

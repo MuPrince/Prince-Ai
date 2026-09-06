@@ -2,6 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from agents.memory.profile import trigger_after_summary
 from app.core.database import SessionLocal, get_db
 from app.models.entities import Task as TaskModel
 from app.models.entities import TaskStatus
@@ -102,5 +103,10 @@ def api_complete_task(
     task = _get_task_or_404(db, task_id)
     if task.status != TaskStatus.completed:
         task = set_status(db, task_id, TaskStatus.completed)
-        background.add_task(run_summary_generation, SessionLocal, task_id)
+        background.add_task(
+            run_summary_generation,
+            SessionLocal,
+            task_id,
+            after_success=trigger_after_summary,
+        )
     return task_to_out(task)

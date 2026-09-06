@@ -2,6 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from agents.memory.profile import trigger_after_summary
 from app.core.database import SessionLocal, get_db
 from app.models.entities import SummaryStatus, Task
 from app.schemas.note import SummaryOut
@@ -35,5 +36,10 @@ def api_regenerate_summary(
     task.summary_status = SummaryStatus.pending
     task.summary_error = None
     db.commit()
-    background.add_task(run_summary_generation, SessionLocal, task_id)
+    background.add_task(
+        run_summary_generation,
+        SessionLocal,
+        task_id,
+        after_success=trigger_after_summary,
+    )
     return SummaryOut(status="pending")

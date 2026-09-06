@@ -1,5 +1,3 @@
-import pytest
-
 import app.api.tasks as tasks_api
 
 
@@ -22,7 +20,6 @@ def test_duplicate_task_returns_400(client):
     assert client.post("/api/tasks", json=payload).status_code == 400
 
 
-@pytest.mark.skip(reason="records API in task 9")
 def test_start_creates_auto_record(client):
     task_id = client.post(
         "/api/tasks",

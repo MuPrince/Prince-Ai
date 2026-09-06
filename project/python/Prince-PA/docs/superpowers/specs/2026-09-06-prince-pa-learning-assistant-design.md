@@ -108,7 +108,7 @@ SQLite（`data/app.db`）+ SQLAlchemy 2.0 ORM；`.md` 文件是笔记与总结�
 | 表 | 说明 | 关键字段 |
 | --- | --- | --- |
 | `languages` | 一级分类 | id、name（唯一）、sort_order、created_at |
-| `tasks` | 学习任务 | id、language_id、title、description、status、summary_status、completed_at、created_at、updated_at |
+| `tasks` | 学习任务 | id、language_id、title、description、status、summary_status、summary_error、completed_at、created_at、updated_at |
 | `note_files` | 笔记/总结文件元数据 | id、task_id、kind（note/summary）、rel_path（唯一）、updated_at |
 | `learning_records` | 学习记录 | id、task_id、record_type（auto/manual）、content、started_at、created_at |
 | `chat_sessions` | 聊天会话 | id、title、created_at、updated_at |

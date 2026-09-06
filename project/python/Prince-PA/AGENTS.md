@@ -7,11 +7,8 @@
 
 - 项目名称：Prince-PA
 - 项目位置：`project/python/Prince-PA`（仓库 `Prince-Ai` 下的 Python 项目）
-- 项目类型：Python AI Agent 项目（当前为空目录，处于初始化阶段）
-- 项目用途：**待补充**（例如个人助理/智能体服务，确认后请在此填写）
-
-当前目录尚无源代码、依赖清单或测试。首次实现功能时，请同步更新本文件中的
-“常用命令”“项目结构”等章节，避免过期信息误导后续任务。
+- 项目类型：Python AI Agent 项目
+- 项目用途：个人Agent开发学习助理，包含学习任务管理，笔记管理，学习记录等功能。
 
 ## 沟通与语言
 
@@ -24,13 +21,12 @@
 
 | 用途 | 命令 |
 | --- | --- |
-| 创建虚拟环境（占位） | `python -m venv .venv` |
-| 安装依赖（占位） | `pip install -r requirements.txt` |
-| 本地启动服务（占位，若为 FastAPI） | `uvicorn app.main:app --reload` |
-| 运行测试（占位） | `pytest` |
-| 代码检查（占位） | `ruff check .` 或 `flake8 .` |
+| 创建虚拟环境 | `python -m venv .venv` |
+| 安装依赖 | `pip install -r requirements.txt` |
+| 本地启动服务 | `uvicorn app.main:app --reload` |
+| 运行测试 | `pytest` |
+| 代码检查 | `ruff check .` 或 `flake8 .` |
 
-命令实际可用后，请删除“占位”字样并补充各自的前置条件。
 
 ## 编码约定
 

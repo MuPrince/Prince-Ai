@@ -9,6 +9,8 @@ from typing import AsyncIterator, Optional
 
 from agent.config.context_type import ContextType
 from agent.main_agnet import get_agent
+from agent.backends.sandbox_pool_backend import set_sandbox_context, clear_sandbox_context
+from agent.tools.sandbox_tools import begin_context_tracking, cleanup_context_tasks
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,11 @@ async def _run_agent_stream(
 
     full_reply = ""
     full_reasoning = ""
+
+    # 沙箱上下文：设置 org_id 供 SandboxPoolBackend 路由；
+    # 开始跟踪本次流创建的沙箱任务，finally 中兜底释放未 finish 的任务
+    set_sandbox_context(org_id)
+    begin_context_tracking()
 
     try:
         async for event in agent.astream_events(
@@ -80,6 +87,14 @@ async def _run_agent_stream(
     except Exception as e:
         logger.exception("stream_chat error thread_id=%s", thread_id)
         yield _sse({"type": "error", "message": str(e)})
+
+    finally:
+        # 兜底：释放本次聊天流中未显式 finish 的沙箱任务，防止沙箱泄漏
+        try:
+            cleanup_context_tasks()
+        except Exception:
+            logger.exception("cleanup_context_tasks error thread_id=%s", thread_id)
+        clear_sandbox_context()
 
 
 async def stream_chat(

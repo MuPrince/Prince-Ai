@@ -1,0 +1,53 @@
+{
+  "skills": [
+    {
+      "name": "sandbox-batch",
+      "agent": "file_agent",
+      "version": "1.0.0",
+      "description": "在沙箱中对多个上传文件做批量压缩打包/格式转换/重命名，产物超 5 个自动打 zip 后发布",
+      "installed_at": "2026-10-19T00:00:00"
+    },
+    {
+      "name": "sandbox-data-analysis",
+      "agent": "statistic_agent",
+      "version": "1.0.0",
+      "description": "在沙箱中用 pandas/matplotlib 分析用户上传的 CSV/Excel 数据，输出统计结论、透视表与图表",
+      "installed_at": "2026-10-19T00:00:00"
+    },
+    {
+      "name": "sandbox-debug",
+      "agent": "coder_agent",
+      "version": "1.0.0",
+      "description": "在沙箱中快速试运行用户代码片段，原样返回 stdout/stderr/exit_code 并协助排错，最轻量不装依赖",
+      "installed_at": "2026-10-19T00:00:00"
+    },
+    {
+      "name": "sandbox-doc-convert",
+      "agent": "file_agent",
+      "version": "1.0.0",
+      "description": "在沙箱中把 Markdown 等文档转换为 PDF/Word(docx)/HTML，注入 CJK 字体防中文乱码后发布下载",
+      "installed_at": "2026-10-19T00:00:00"
+    },
+    {
+      "name": "sandbox-file-gen",
+      "agent": "file_agent",
+      "version": "1.0.0",
+      "description": "在沙箱中生成 PPT/Excel/PDF/海报/图片等文件产物，校验后发布下载链接交付用户",
+      "installed_at": "2026-10-19T00:00:00"
+    },
+    {
+      "name": "sandbox-temp-env",
+      "agent": "main",
+      "version": "1.0.0",
+      "description": "在沙箱中临时安装系统/pip 依赖（ffmpeg、latex、指定 pip 包）后执行任务，完成后销毁沙箱不回池",
+      "installed_at": "2026-10-19T00:00:00"
+    },
+    {
+      "name": "skill-manager",
+      "agent": "main",
+      "version": "1.0.0",
+      "description": "技能全生命周期管理——创建新技能、从 GitHub/本地安装、校验体检、检索卸载，以及把校验完成的技能分配给指定 agent",
+      "installed_at": "2026-10-19T00:00:00"
+    }
+  ]
+}

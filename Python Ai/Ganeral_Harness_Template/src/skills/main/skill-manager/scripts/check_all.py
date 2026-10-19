@@ -2,7 +2,9 @@
 
 （命名避开标准库 inspect，防止同名遮蔽导致 argparse 等崩溃。）
 
-扫描 <root> 的每个一级子目录，凡含 SKILL.md 的视为一个技能，逐个校验并汇总。
+支持两种技能布局，凡目录内直接含 SKILL.md 的即视为一个技能：
+- 一层：<root>/<skill>/SKILL.md
+- 两层：<root>/<agent>/<skill>/SKILL.md（<agent> 目录自身不含 SKILL.md 时自动向下再扫一层）
 
 用法:
     python3 check_all.py [root] [--json] [--output index.json]
@@ -22,27 +24,49 @@ import sys
 from validate import validate_skill
 
 
+def _is_skill_dir(path: str) -> bool:
+    """目录内是否直接含 SKILL.md（是则视为一个技能目录）。"""
+    return os.path.isfile(os.path.join(path, "SKILL.md"))
+
+
+def _validate_one(skill_dir: str, dir_name: str, agent: str) -> dict:
+    """校验单个技能目录，返回结果条目（agent 为空表示一层布局）。"""
+    errors, warnings, meta = validate_skill(skill_dir)
+    status = "error" if errors else ("warn" if warnings else "ok")
+    return {
+        "name": meta.get("name", dir_name),
+        "agent": agent,
+        "dir": dir_name,
+        "version": meta.get("version", ""),
+        "status": status,
+        "errors": errors,
+        "warnings": warnings,
+    }
+
+
 def inspect_root(root: str):
-    """扫描并校验 root 下所有技能，返回结果列表。"""
+    """扫描并校验 root 下所有技能，返回结果列表。
+
+    支持两种布局：
+    - 一层：<root>/<skill>/SKILL.md
+    - 两层：<root>/<agent>/<skill>/SKILL.md（agent 目录自身不含 SKILL.md 时向下再扫一层）
+    """
     results = []
     if not os.path.isdir(root):
         return results
     for entry in sorted(os.listdir(root)):
-        sub = os.path.join(root, entry)
-        if not os.path.isdir(sub):
+        top = os.path.join(root, entry)
+        if not os.path.isdir(top):
             continue
-        if not os.path.isfile(os.path.join(sub, "SKILL.md")):
-            continue  # 无 SKILL.md 的目录不视为技能，跳过
-        errors, warnings, meta = validate_skill(sub)
-        status = "error" if errors else ("warn" if warnings else "ok")
-        results.append({
-            "name": meta.get("name", entry),
-            "dir": entry,
-            "version": meta.get("version", ""),
-            "status": status,
-            "errors": errors,
-            "warnings": warnings,
-        })
+        if _is_skill_dir(top):
+            # 一层布局：<root>/<skill>/
+            results.append(_validate_one(top, entry, agent=""))
+            continue
+        # 否则视为 agent 目录，向下扫描两层布局：<root>/<agent>/<skill>/
+        for sub_entry in sorted(os.listdir(top)):
+            sub = os.path.join(top, sub_entry)
+            if os.path.isdir(sub) and _is_skill_dir(sub):
+                results.append(_validate_one(sub, sub_entry, agent=entry))
     return results
 
 
@@ -68,7 +92,8 @@ def main():
     else:
         print(f"体检目录：{args.root}（共 {summary['total']} 个技能）")
         for r in results:
-            print(f"  [{r['status']:5}] {r['dir']} (v{r['version'] or '-'})")
+            label = f"{r['agent']}/{r['dir']}" if r.get("agent") else r["dir"]
+            print(f"  [{r['status']:5}] {label} (v{r['version'] or '-'})")
             for e in r["errors"]:
                 print(f"         报错: {e}")
             for w in r["warnings"]:

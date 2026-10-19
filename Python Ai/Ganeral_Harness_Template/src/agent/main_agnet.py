@@ -23,6 +23,11 @@ from langgraph.store.postgres.aio import AsyncPostgresStore
 from agent.config.config import MODEL
 from agent.config.constants import LOCAL_SKILLS_DIR
 from agent.config.context_type import ContextType
+from agent.backends.sandbox import get_sandbox_pool, close_sandbox_pool
+from agent.backends.sandbox_pool_backend import SandboxPoolBackend
+from agent.subagent import SUBAGENTS
+from agent.tools.sandbox_tools import SANDBOX_TOOLS
+from agent.tools.skill_tools import SKILL_TOOLS
 
 load_dotenv()
 
@@ -64,11 +69,15 @@ async def build_agent():
 
     - checkpointer：AsyncPostgresSaver，负责 thread 级对话历史
     - store：AsyncPostgresStore，负责跨 thread 的 memory / 知识
+    - subagents：SUBAGENTS（file_agent / statistic_agent / coder_agent / reviewer_agent
+      四个专职子 Agent，经内置 task 工具按 description 委派；
+      deepagents 会额外自动追加一个内置 general-purpose 子 Agent）
     - backend：CompositeBackend
         * 默认            → StateBackend（thread 内临时文件）
         * /memory/AGENTS.md → StoreBackend（全局 AGENTS 记忆）
         * /memories/       → StoreBackend（全局 memories）
         * /skills/         → FilesystemBackend（LOCAL_SKILLS_DIR）
+        * /sandbox/        → SandboxPool（按 org_id 隔离，支持并发与等待队列）
     """
     global _stack, _agent, _checkpointer, _store
     if _agent is not None:
@@ -84,11 +93,16 @@ async def build_agent():
     await checkpointer.setup()
     await store.setup()
 
+    # 启动沙箱池（按 org_id 隔离，支持并发 64 任务与等待队列）
+    get_sandbox_pool()
+
     agent = create_deep_agent(
         model=MODEL,
         context_schema=ContextType,
         memory=["/memories/"],
-        skills=["/skills/"],
+        skills=["/skills/main/"],
+        tools=[*SANDBOX_TOOLS, *SKILL_TOOLS],
+        subagents=SUBAGENTS,
         checkpointer=checkpointer,
         store=store,
         backend=CompositeBackend(
@@ -106,6 +120,7 @@ async def build_agent():
                     root_dir=str(LOCAL_SKILLS_DIR),
                     virtual_mode=True,
                 ),
+                "/sandbox/": SandboxPoolBackend(),
             },
         ),
     )
@@ -137,3 +152,6 @@ async def close_agent() -> None:
             _agent = None
             _checkpointer = None
             _store = None
+
+    # 关闭沙箱池
+    close_sandbox_pool()

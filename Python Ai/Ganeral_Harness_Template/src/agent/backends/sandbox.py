@@ -30,6 +30,7 @@ from typing import Dict, List, Optional, Tuple
 
 from opensandbox import SandboxSync
 from deepagents_opensandbox import OpensandboxBackend
+from opensandbox.config.connection_sync import ConnectionConfigSync
 
 from agent.config.config import (
     SANDBOX_IDLE_TIMEOUT,
@@ -37,6 +38,7 @@ from agent.config.config import (
     SANDBOX_IMAGE,
     SANDBOX_PERSIST_MAX_RETRIES,
     SANDBOX_PERSIST_CMD_TIMEOUT,
+    SANDBOX_USE_SERVER_PROXY,
 )
 
 logger = logging.getLogger(__name__)
@@ -129,6 +131,10 @@ class SandboxPool:
         self._idle_timeout = idle_timeout
         self._cleanup_interval = cleanup_interval
         self._max_concurrent = max_concurrent
+        # Docker/bridge 网络下沙箱容器内网 IP 不可路由，必须走服务端代理（默认开）
+        self._connection_config = ConnectionConfigSync(
+            use_server_proxy=SANDBOX_USE_SERVER_PROXY
+        )
 
         # org_id -> list of _SandboxEntry（每个 org 可有多沙箱支持并发）
         self._pools: Dict[str, List[_SandboxEntry]] = {}
@@ -157,7 +163,9 @@ class SandboxPool:
         """启动沙箱池：探测可用性 + 启动后台线程。"""
         try:
             logger.info("SandboxPool: 探测沙箱可用性...")
-            probe = SandboxSync.create(self._image)
+            probe = SandboxSync.create(
+                self._image, connection_config=self._connection_config
+            )
             probe.kill()
             probe.close()
             self._available = True
@@ -356,7 +364,9 @@ class SandboxPool:
         # 创建新沙箱
         try:
             logger.info(f"SandboxPool: 为 org={org_id} 创建新沙箱")
-            sandbox = SandboxSync.create(self._image)
+            sandbox = SandboxSync.create(
+                self._image, connection_config=self._connection_config
+            )
             backend = OpensandboxBackend(sandbox=sandbox)
             entry = _SandboxEntry(sandbox=sandbox, backend=backend)
             entries.append(entry)

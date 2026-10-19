@@ -6,6 +6,7 @@ API 路由定义层。
 """
 
 import logging
+import urllib.parse
 from typing import List, Literal, Optional
 
 from fastapi import APIRouter, File, Form, Path, Query, UploadFile
@@ -193,8 +194,17 @@ async def sandbox_download(
     `/api/sandbox/download?path=...` 链接，用户点击即可下载到本地。
     """
     content, filename = sandbox_service.download(path=path, org_id=org_id)
+    # Content-Disposition 只能放 latin-1 字符：中文等非 ASCII 文件名必须
+    # 走 RFC 5987 的 filename*=UTF-8''<percent-encoded>，并附 ASCII 兜底名
+    ascii_fallback = filename.encode("ascii", errors="replace").decode("ascii")
+    quoted = urllib.parse.quote(filename)
     return Response(
         content=content,
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename=\"{ascii_fallback}\"; "
+                f"filename*=UTF-8''{quoted}"
+            )
+        },
     )

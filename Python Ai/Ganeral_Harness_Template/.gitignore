@@ -11,3 +11,7 @@ __pycache__/
 
 # 项目运行时产物
 download/
+uploads/
+
+# pytest
+.pytest_cache/

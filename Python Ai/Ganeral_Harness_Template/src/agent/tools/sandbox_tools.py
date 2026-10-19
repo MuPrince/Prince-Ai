@@ -1,9 +1,10 @@
 """
 沙箱任务生命周期工具（Agent 可见）。
 
-5 个工具覆盖沙箱任务完整生命周期：
+6 个工具覆盖沙箱任务完整生命周期：
 - sandbox_task_start        申请沙箱并创建标准工作目录（input/work/output）
 - sandbox_task_import_file  将用户上传文件导入沙箱工作目录 input/
+- sandbox_task_execute      在当前任务沙箱内执行 shell 命令（唯一真正的代码执行通道）
 - sandbox_task_publish      把 output/ 产物持久化到 download/ 并返回下载链接
 - sandbox_task_finish       释放沙箱（可选销毁），任务级绑定解除
 - sandbox_pool_status       查询沙箱池状态
@@ -209,6 +210,49 @@ def sandbox_task_import_file(file_id: str) -> dict:
     return {"sandbox_path": sandbox_path}
 
 
+# execute 输出截断阈值：避免超长输出撑爆上下文
+_EXECUTE_OUTPUT_MAX_CHARS = 20000
+
+
+@tool
+def sandbox_task_execute(command: str, timeout: int = 120) -> dict:
+    """在当前沙箱任务的沙箱内执行 shell 命令（唯一真正的代码执行通道）。
+
+    文件读写建议配合虚拟路径 /sandbox/ 前缀的 write_file/read_file 工具使用；
+    运行脚本、安装依赖、格式转换、校验文件等都必须通过本工具。
+
+    Args:
+        command: 要在沙箱内执行的 shell 命令。
+        timeout: 命令超时时间（秒），默认 120，最长不超过 3600。
+
+    Returns:
+        {"exit_code": int, "output": str}；非零退出时 output 含 stderr，
+        请阅读错误信息自动修复后重试（最多 2 次）；无活跃任务返回 {"error": ...}。
+    """
+    task = _resolve_current_task()
+    if task is None:
+        return {"error": "当前没有活跃的沙箱任务，请先调用 sandbox_task_start"}
+
+    pool = get_sandbox_pool()
+    entry = pool.get_task_entry(task.task_id)
+    if entry is None:
+        return {"error": "任务绑定的沙箱已释放，请重新启动任务"}
+
+    timeout = max(1, min(int(timeout), 3600))
+    resp = entry.backend.execute(command, timeout=timeout)
+    exit_code = getattr(resp, "exit_code", 1)
+    output = getattr(resp, "output", "") or ""
+    if len(output) > _EXECUTE_OUTPUT_MAX_CHARS:
+        output = (
+            output[:_EXECUTE_OUTPUT_MAX_CHARS]
+            + f"\n... [输出过长已截断，共 {len(output)} 字符]"
+        )
+    logger.info(
+        f"sandbox_task_execute: task_id={task.task_id} exit_code={exit_code} cmd={command[:80]}"
+    )
+    return {"exit_code": exit_code, "output": output}
+
+
 @tool
 def sandbox_task_publish(files: Optional[List[str]] = None) -> dict:
     """把当前沙箱任务 output/ 目录的产物持久化到本地，并返回下载链接。
@@ -316,6 +360,7 @@ def cleanup_context_tasks():
 SANDBOX_TOOLS = [
     sandbox_task_start,
     sandbox_task_import_file,
+    sandbox_task_execute,
     sandbox_task_publish,
     sandbox_task_finish,
     sandbox_pool_status,

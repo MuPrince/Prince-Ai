@@ -6,8 +6,10 @@
 from deepagents.middleware.subagents import SubAgent
 from langchain.agents.structured_output import ToolStrategy
 
+from agent.config.config import get_subagent_model
 from agent.subagent.schemas import SubAgentReport
 from agent.tools.sandbox_tools import (
+    sandbox_task_execute,
     sandbox_task_finish,
     sandbox_task_import_file,
     sandbox_task_publish,
@@ -53,10 +55,13 @@ FILE_AGENT: SubAgent = {
         "它返回产物下载链接。不处理代码调试与数据统计分析。"
     ),
     "system_prompt": FILE_AGENT_PROMPT,
+    # DeepSeek thinking 模式拒绝强制 tool_choice，须用关闭 thinking 的共享模型实例
+    "model": get_subagent_model(),
     "skills": ["/skills/file_agent/"],
     "tools": [
         sandbox_task_start,
         sandbox_task_import_file,
+        sandbox_task_execute,
         sandbox_task_publish,
         sandbox_task_finish,
     ],

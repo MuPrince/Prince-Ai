@@ -20,6 +20,10 @@ from dotenv import load_dotenv
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.store.postgres.aio import AsyncPostgresStore
 
+# 必须在导入子 Agent / 工具等依赖环境变量的模块之前加载 .env：
+# 子 Agent spec 在 import 时调用 get_subagent_model()，需要 DEEPSEEK_API_KEY 已就绪
+load_dotenv()
+
 from agent.config.config import MODEL
 from agent.config.constants import LOCAL_SKILLS_DIR
 from agent.config.context_type import ContextType
@@ -28,8 +32,6 @@ from agent.backends.sandbox_pool_backend import SandboxPoolBackend
 from agent.subagent import SUBAGENTS
 from agent.tools.sandbox_tools import SANDBOX_TOOLS
 from agent.tools.skill_tools import SKILL_TOOLS
-
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 

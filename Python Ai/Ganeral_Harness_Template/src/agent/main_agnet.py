@@ -32,6 +32,7 @@ from agent.backends.sandbox_pool_backend import SandboxPoolBackend
 from agent.subagent import SUBAGENTS
 from agent.tools.sandbox_tools import SANDBOX_TOOLS
 from agent.tools.skill_tools import SKILL_TOOLS
+from agent.tools.mcp_tools import setup_mcp_tools
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +81,8 @@ async def build_agent():
         * /memories/       → StoreBackend（全局 memories）
         * /skills/         → FilesystemBackend（LOCAL_SKILLS_DIR）
         * /sandbox/        → SandboxPool（按 org_id 隔离，支持并发与等待队列）
+    - mcp：以 stdio 子进程接入 src/mcp_server，把 Java 业务 Api 工具并入工具集；
+      服务不可用时自动降级（不阻断启动），会话挂在 stack 上随 Agent 一起关闭
     """
     global _stack, _agent, _checkpointer, _store
     if _agent is not None:
@@ -98,12 +101,15 @@ async def build_agent():
     # 启动沙箱池（按 org_id 隔离，支持并发 64 任务与等待队列）
     get_sandbox_pool()
 
+    # 接入 MCP 服务（src/mcp_server → Java 业务 Api）；失败时降级为空列表
+    mcp_tools = await setup_mcp_tools(stack)
+
     agent = create_deep_agent(
         model=MODEL,
         context_schema=ContextType,
         memory=["/memories/"],
         skills=["/skills/main/"],
-        tools=[*SANDBOX_TOOLS, *SKILL_TOOLS],
+        tools=[*SANDBOX_TOOLS, *SKILL_TOOLS, *mcp_tools],
         subagents=SUBAGENTS,
         checkpointer=checkpointer,
         store=store,

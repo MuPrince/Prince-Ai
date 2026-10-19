@@ -15,3 +15,5 @@ uploads/
 
 # pytest
 .pytest_cache/
+
+.trae/

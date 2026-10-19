@@ -6,6 +6,7 @@ dependencies = [
     "deepagents>=0.7.25",
     "deepagents-opensandbox>=1.0.2",
     "fastapi>=0.146.0",
+    "fastmcp==4.1.0",
     "langchain-deepseek>=1.1.1",
     "langgraph>=1.2.16",
     "langgraph-checkpoint-postgres>=3.2.0",
@@ -17,4 +18,10 @@ dependencies = [
     "python-dotenv>=1.2.4",
     "python-multipart>=0.0.32",
     "uvicorn>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
 ]

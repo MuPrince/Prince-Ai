@@ -1,0 +1,20 @@
+[project]
+name = "ganeral-harness-template"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "deepagents>=0.7.25",
+    "deepagents-opensandbox>=1.0.2",
+    "fastapi>=0.146.0",
+    "langchain-deepseek>=1.1.1",
+    "langgraph>=1.2.16",
+    "langgraph-checkpoint-postgres>=3.2.0",
+    "load-dotenv>=0.1.0",
+    "opensandbox>=1.1.1",
+    "optional>=0.0.1",
+    "psycopg[binary,pool]>=3.3.6",
+    "pydantic>=2.14.1",
+    "python-dotenv>=1.2.4",
+    "python-multipart>=0.0.32",
+    "uvicorn>=0.54.0",
+]

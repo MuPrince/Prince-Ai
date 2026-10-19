@@ -1,1 +1,0 @@
-org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=com.prince.ai.model.autoconfiguration.filter.DependencyAutoConfiguration
